@@ -8,6 +8,11 @@ A c++ implementation of the Cuckoo Filter algorithm as explained in the [Cuckoo 
 - We store only fingerprints in the hash table to prevent inserting items in their entirety (perhaps externally to the table). But here, we use <i>partial-key cuckoo hashing</i> to find an item's alternate location based only on its fingerprint.
 - A `fingerprint` is a bit string derived from the item using a hash function- for each item inserted, instead of key-value pairs, A set membership query for item `x`, and returns true if an identical fingerprint is found.
 
+## Illustration of Cuckoo Hashing 
+![img]()
+Figure (a) shows how insert an item `x` into a hash table with 8 buckets, `x` can placed in either bucket 2 or 6. If either of these buckets are empty, then `x` is inserted into it and the insertion completes. If neither has space, the item randomly selects one of the candidate buckets (ex. bucket 6) and kicks out the existing item (in this case `a`) and re-inserts the victim item to its own alternate location. In this example, displacing `a` triggers another relocation that kicks existing item `c` from bucket 4 to bucket 1. </br>
+This proicedure may repeat until a vacant bucket is found as shown in Figure (b), or until a maximum number of displacements is reached(e.g. `500` times in this implementation). If no vacant bucket is found, this hash table is considered too full to insert. Note that although cuckoo hashing may execute a sequence of displacements, its amortized insertion time is O(1).
+
 ## Algorithms
 The basic unit of the cuckoo hash tables used in our filters is called an `entry`. Each entry stores a fingerprint. The hash table consists of an array of buckets, where a bucket can have multiple entries.
 ### 1. Insert
@@ -73,3 +78,4 @@ return False
 ## Usage
 
 ## Conclusion
+- We can extendthe implementation to use buckets that hold multiple items.
