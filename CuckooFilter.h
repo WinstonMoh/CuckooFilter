@@ -7,9 +7,11 @@
 #include "./Hash.h"
 using namespace std;
 
+#define N 1000
+
 class CuckooFilter {
     private:
-        int h1Count, h2Count;
+        int h1Count = 0, h2Count = 0;
         vector<string> hash1, hash2;
         Hash hash_function;
         string insertIntoFirstTable(string item);
@@ -26,16 +28,12 @@ class CuckooFilter {
 };
 
 CuckooFilter::CuckooFilter() {
-    this->h1Count = 0;
-    this->h2Count = 0;
-    this->hash1.resize(1000);
-    this->hash2.resize(1000);
-    this->hash_function.setSize(1000);
+    this->hash1.resize(N);
+    this->hash2.resize(N);
+    this->hash_function.setSize(N);
 }
 
 CuckooFilter::CuckooFilter(int size) {
-    this->h1Count = 0;
-    this->h2Count = 0;
     this->hash1.resize(size);
     this->hash2.resize(size);
     this->hash_function.setSize(size);

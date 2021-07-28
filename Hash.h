@@ -7,17 +7,18 @@ using namespace std;
 
 class Hash {
     private:
-        int size;
+        int size = 1;
     public:
         Hash();
+        Hash(int size);
         ~Hash();
         void setSize(int size);
         int hash1(string key);
         int hash2(string key);
 };
 
-Hash::Hash() {
-    this->size = 1;
+Hash::Hash(int size) {
+    this->size = size;
 }
 
 Hash::~Hash() {

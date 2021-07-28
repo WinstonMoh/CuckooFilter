@@ -6,10 +6,11 @@
 
 using namespace std;
 
-#define N 4
+#define TABLE_SIZE 1
+
 int main() {
     // Create cuckoo filter with 2 hash tables.
-    CuckooFilter filter(N);
+    CuckooFilter filter(TABLE_SIZE);
     vector<string> elements = {"chepson", "gerald", "brandon", "placali"};
     
     // INSERTION
