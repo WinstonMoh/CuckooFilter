@@ -1,2 +1,2 @@
 # CuckooFilter
-A c++ implementation of a cuckoo filter.
+A c++ implementation of a Cuckoo Filter.

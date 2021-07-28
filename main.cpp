@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define N 1000
+#define N 4
 int main() {
     // Create cuckoo filter with 2 hash tables.
     CuckooFilter filter(N);
@@ -37,7 +37,7 @@ int main() {
     }
 
     // EMPTY TABLES
-    assert(0 == filter.size() and filter.empty());
+    assert(filter.size() == 0 and filter.empty());
 
     return 1;
 }
