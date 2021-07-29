@@ -100,7 +100,7 @@ bool CuckooFilter::Insert(string item) {
         int entry_index = rand() % BUCKET_SIZE;
         string entry = buckets[i][entry_index];
         swap(f_item, buckets[i][entry_index]);
-        i = i ^ Hash(f_item);
+        i = (i ^ Hash(f_item)) % num_buckets;
         if (buckets[i].size() < BUCKET_SIZE) {
             buckets[i].push_back(f_item);
             return true;

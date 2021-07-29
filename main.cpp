@@ -9,7 +9,7 @@ using namespace std;
 #define TABLE_SIZE 2
 
 int main() {
-    // Create cuckoo filter with 2 hash tables.
+    // Create cuckoo filter with 2 buckets.
     CuckooFilter filter(TABLE_SIZE);
     vector<string> elements = {"chepson", "gerald", "TheProcess", "brandon"};
     vector<string> mixedElements = {"chepson", "gerald", "TheProcess", "brandon", "placali", "Koded"};
