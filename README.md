@@ -78,6 +78,24 @@ return False
 ```
 
 ## Usage
+```c++
+int main() {
+    int buckets = 20;
+    string item = "item";
+    CuckooFilter filter(buckets);
+
+    // Insert item into filter.
+    filter.Insert(item);
+
+    // Lookup item in filter.
+    filter.Lookup(item);
+
+    // Delete item from filter.
+    filter.Delete(item);
+
+    return 1;
+}
+```
 
 ## Conclusion
 - We can extend the implementation to use buckets that hold multiple items.
