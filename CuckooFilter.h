@@ -4,39 +4,36 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "./Hash.h"
+#include <tuple>
 using namespace std;
 
-#define N 1000
+#define NUM_BUCKETS 1000
+#define BUCKET_SIZE 4
+#define MAX_NUM_KICKS 500
 
 class CuckooFilter {
     private:
-        int h1Count = 0, h2Count = 0;
-        vector<string> hash1, hash2;
-        Hash hash_function;
-        string insertIntoFirstTable(string item);
-        string insertIntoSecondTable(string item);
+        int num_buckets;
+        vector<vector<string>> buckets;
+        uint32_t Hash(string item);
+        tuple<string, uint32_t, uint32_t> getCuckooParams(string item);
     public:
         CuckooFilter();
         CuckooFilter(int size);
         ~CuckooFilter();
-        bool remove(string item);
-        bool find(string item);
-        bool insert(string item);
-        int size();
-        bool empty();
+        bool Delete(string item);
+        bool Lookup(string item);
+        bool Insert(string item);
 };
 
 CuckooFilter::CuckooFilter() {
-    this->hash1.resize(N);
-    this->hash2.resize(N);
-    this->hash_function.setSize(N);
+    this->num_buckets = NUM_BUCKETS;
+    this->buckets.resize(NUM_BUCKETS);
 }
 
 CuckooFilter::CuckooFilter(int size) {
-    this->hash1.resize(size);
-    this->hash2.resize(size);
-    this->hash_function.setSize(size);
+    this->num_buckets = size;
+    this->buckets.resize(size);
 }
 
 CuckooFilter::~CuckooFilter() {
@@ -44,34 +41,37 @@ CuckooFilter::~CuckooFilter() {
 }
 
 /**
+ * Calculate parameters for cuckoo hashing.
+ * @param item the item to create parameters for.
+ * @return a tuple of fingerprint, hash1 and hash2.
+ */
+tuple<string, uint32_t, uint32_t> CuckooFilter::getCuckooParams(string item) {
+    hash<string> hash_string; 
+    uint32_t hash = hash_string(item);
+    string f_item = to_string(hash);
+    uint32_t i1 = Hash(item) % num_buckets;
+    uint32_t i2 = (i1 ^ Hash(f_item)) % num_buckets;
+    return make_tuple(f_item, i1, i2);
+}
+
+/**
  * Search for an elelment in our filter.
  * @param item the item to be searched for.
  * @return true if item is in filter; false otherwise.  
  */
-bool CuckooFilter::find(string item) {
-    int h1_position = hash_function.hash1(item);
-    bool h1_exists = hash1[h1_position] == item;
-    if (h1_exists) return true;
+bool CuckooFilter::Lookup(string item) {
+    tuple<string, uint32_t, uint32_t> params = getCuckooParams(item);
+    string f_item = get<0>(params);
+    uint32_t i1 = get<1>(params);
+    uint32_t i2 = get<2>(params);
 
-    int h2_position = hash_function.hash2(item);
-    return hash2[h2_position] == item;
-}
-
-
-string CuckooFilter::insertIntoFirstTable(string item) {
-    int position = hash_function.hash1(item);
-    string curr_item = hash1[position];
-    hash1[position] = item;
-    h1Count += (curr_item == "") ? 1 : 0;
-    return curr_item;
-}
-
-string CuckooFilter::insertIntoSecondTable(string item) {
-    int position = hash_function.hash2(item);
-    string curr_item = hash2[position];
-    hash2[position] = item;
-    h2Count += (curr_item == "") ? 1 : 0;
-    return curr_item;
+    for (auto e : buckets[i1]) {
+        if (e == f_item) return true;
+    }
+    for (auto e : buckets[i2]) {
+        if (e == f_item) return true;
+    }
+    return false;
 }
 
 /**
@@ -79,12 +79,34 @@ string CuckooFilter::insertIntoSecondTable(string item) {
  * @param item the item to be inserted.
  * @return true if insertion succeeded; false otherwise.  
  */
-bool CuckooFilter::insert(string item) {
-    string returned_str = insertIntoFirstTable(item);
-    while (returned_str != "") {
-        returned_str = insertIntoSecondTable(returned_str);
+bool CuckooFilter::Insert(string item) {
+    tuple<string, uint32_t, uint32_t> params = getCuckooParams(item);
+    string f_item = get<0>(params);
+    uint32_t i1 = get<1>(params);
+    uint32_t i2 = get<2>(params);
+
+    if (buckets[i1].size() < BUCKET_SIZE) {
+        buckets[i1].push_back(f_item);
+        return true;
     }
-    return true;
+    if (buckets[i2].size() < BUCKET_SIZE) {
+        buckets[i2].push_back(f_item);
+        return true;
+    }
+
+    // Relocate existing items.
+    uint32_t i = rand() % 2 == 0 ? i1 : i2;
+    for (int n = 0; n < MAX_NUM_KICKS; n++) {
+        int entry_index = rand() % BUCKET_SIZE;
+        string entry = buckets[i][entry_index];
+        swap(f_item, buckets[i][entry_index]);
+        i = i ^ Hash(f_item);
+        if (buckets[i].size() < BUCKET_SIZE) {
+            buckets[i].push_back(f_item);
+            return true;
+        }
+    }
+    return false;   // if after MAX_NUM_KICKS, we haven't found an empty spot. Filter is full.
 }
 
 /**
@@ -92,38 +114,41 @@ bool CuckooFilter::insert(string item) {
  * @param item the item to be removed.
  * @return true if item was removed successfully; false otherwise.  
  */
-bool CuckooFilter::remove(string item) {
-    int h1_position = hash_function.hash1(item);
-    if (hash1[h1_position] == item) {    // delete item.
-        hash1[h1_position] = "";
-        h1Count--;
-        return true;
-    }
+bool CuckooFilter::Delete(string item) {
+    tuple<string, uint32_t, uint32_t> params = getCuckooParams(item);
+    string f_item = get<0>(params);
+    uint32_t i1 = get<1>(params);
+    uint32_t i2 = get<2>(params);
 
-    // Check in table 2.
-    int h2_position = hash_function.hash2(item);
-    if (hash2[h2_position] == item) {
-        hash2[h2_position] = "";
-        h2Count--;
-        return true;
+    for (int i = 0; i < buckets[i1].size(); i++) {
+        if (buckets[i1][i] == f_item) {
+            buckets[i1].erase(buckets[i1].begin() + i);
+            return true;
+        }
+    }
+    for (int i = 0; i < buckets[i2].size(); i++) {
+        if (buckets[i2][i] == f_item) {
+            buckets[i2].erase(buckets[i2].begin() + i);
+            return true;
+        }
     }
     return false;
 }
 
 /**
- * Get the size of the filter - the number of used slots.
- * @return the filter size.  
+ * Jump consistent hashing as seen in https://arxiv.org/pdf/1406.2294.pdf. 
+ * @param key the item to be hashed.
+ * @return index in hash map.
  */
-int CuckooFilter::size() {
-    return this->h1Count + this->h2Count;
-}
-
-/**
- * Find out if the filter is empty or not.
- * @return true if filter is empty; false otherwise.  
- */
-bool CuckooFilter::empty() {
-    return this->h1Count == 0 and this->h2Count == 0;
+uint32_t CuckooFilter::Hash(string key) {
+    unsigned long long key_val = hash<string>{}(key);
+    uint32_t b = 1, j = 0;
+    while (j < this->num_buckets) {
+        b = j;
+        key_val = key_val * 2862933555777941757ULL + 1; // Did you say magic number?
+        j = (b + 1) * (double(1LL << 31) / double((key_val >> 33) + 1));
+    }
+    return b;
 }
 
 #endif
