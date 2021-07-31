@@ -98,4 +98,4 @@ int main() {
 ```
 
 ## Conclusion
-- We can extend the implementation to use buckets that hold multiple items.
+- We can extend the implementation to use buckets that hold more items.
